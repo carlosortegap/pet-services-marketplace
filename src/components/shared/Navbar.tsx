@@ -24,9 +24,11 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
-            <Link href="/providers" className="hover:text-blue-600 transition">Buscar Proveedores</Link>
+            <Link href="/providers" className="hover:text-blue-600 transition">Buscar</Link>
             <Link href="/providers?type=VETERINARIAN" className="hover:text-blue-600 transition">Veterinarios</Link>
             <Link href="/providers?type=PET_WALKER" className="hover:text-blue-600 transition">Paseadores</Link>
+            <Link href="/providers/map" className="hover:text-blue-600 transition">🗺️ Mapa</Link>
+            <Link href="/about" className="hover:text-blue-600 transition">¿Qué hacemos?</Link>
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -79,6 +81,8 @@ export default function Navbar() {
           <Link href="/providers" className="block py-2 text-gray-700 font-medium" onClick={() => setMobileOpen(false)}>Buscar Proveedores</Link>
           <Link href="/providers?type=VETERINARIAN" className="block py-2 text-gray-700" onClick={() => setMobileOpen(false)}>Veterinarios</Link>
           <Link href="/providers?type=PET_WALKER" className="block py-2 text-gray-700" onClick={() => setMobileOpen(false)}>Paseadores</Link>
+          <Link href="/providers/map" className="block py-2 text-gray-700" onClick={() => setMobileOpen(false)}>🗺️ Mapa de clínicas</Link>
+          <Link href="/about" className="block py-2 text-gray-700" onClick={() => setMobileOpen(false)}>¿Qué hacemos?</Link>
           <hr className="border-gray-100" />
           {session ? (
             <>
