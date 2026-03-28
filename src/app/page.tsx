@@ -1,64 +1,72 @@
-export default function Home() {
+import Hero from "@/components/providers/Hero";
+import Navbar from "@/components/shared/Navbar";
+import Footer from "@/components/shared/Footer";
+import Link from "next/link";
+
+export default function HomePage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="max-w-6xl mx-auto px-4 py-20">
-        {/* Hero */}
-        <div className="text-center mb-16">
-          <div className="text-6xl mb-6">🐾</div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            PetCare Marketplace
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-            Find trusted veterinarians and pet walkers near you. Book appointments, track your pets health, and connect with the best pet care professionals.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <a href="/providers" className="bg-blue-600 text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-blue-700 transition">
-              Find a Provider
-            </a>
-            <a href="/register" className="border-2 border-blue-600 text-blue-600 px-8 py-3 rounded-full text-lg font-semibold hover:bg-blue-50 transition">
-              Join as Provider
-            </a>
-          </div>
-        </div>
+    <>
+      <Navbar />
+      <main className="min-h-screen flex flex-col">
+        <Hero />
 
-        {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
-            <div className="text-4xl mb-4">🏥</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Veterinarians</h3>
-            <p className="text-gray-600">Find certified vets nearby. Annual checkups, vaccinations, emergency care and more.</p>
+        {/* Servicios */}
+        <section className="bg-white py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
+              Todo lo que tu mascota necesita
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                { icon: "🏥", title: "Veterinarios", desc: "Vets certificados para consultas, vacunas y urgencias.", href: "/providers?type=VETERINARIAN" },
+                { icon: "🦮", title: "Paseadores", desc: "Paseos diarios, grupales y estancias nocturnas de confianza.", href: "/providers?type=PET_WALKER" },
+                { icon: "⭐", title: "Reseñas verificadas", desc: "Opiniones reales de dueños de mascotas. Reserva con confianza.", href: "/providers" },
+              ].map((f) => (
+                <Link
+                  key={f.title}
+                  href={f.href}
+                  className="bg-gray-50 rounded-2xl p-8 text-center hover:shadow-md hover:-translate-y-1 transition-all duration-200 border border-gray-100 group"
+                >
+                  <div className="text-5xl mb-4">{f.icon}</div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition">{f.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{f.desc}</p>
+                </Link>
+              ))}
+            </div>
           </div>
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
-            <div className="text-4xl mb-4">🦮</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Pet Walkers</h3>
-            <p className="text-gray-600">Trusted walkers for your dog. Daily walks, group sessions, and overnight stays.</p>
-          </div>
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
-            <div className="text-4xl mb-4">⭐</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Verified Reviews</h3>
-            <p className="text-gray-600">Real reviews from pet owners. Book with confidence knowing providers are vetted.</p>
-          </div>
-        </div>
+        </section>
 
-        {/* Stats */}
-        <div className="bg-blue-600 rounded-3xl p-12 text-white text-center">
-          <h2 className="text-3xl font-bold mb-8">Trusted by pet owners everywhere</h2>
-          <div className="grid grid-cols-3 gap-8">
-            <div>
-              <div className="text-4xl font-bold">2,000+</div>
-              <div className="text-blue-200 mt-1">Pet Owners</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold">250+</div>
-              <div className="text-blue-200 mt-1">Providers</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold">4.8⭐</div>
-              <div className="text-blue-200 mt-1">Avg Rating</div>
+        {/* Estadísticas */}
+        <section className="bg-blue-600 py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-white text-center">
+              {[
+                { value: "2,000+", label: "Dueños de mascotas" },
+                { value: "250+",   label: "Proveedores" },
+                { value: "4.8⭐",  label: "Calificación promedio" },
+                { value: "10K+",   label: "Reservas realizadas" },
+              ].map((s) => (
+                <div key={s.label}>
+                  <div className="text-4xl font-extrabold">{s.value}</div>
+                  <div className="text-blue-200 mt-1 text-sm">{s.label}</div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </div>
-    </main>
+        </section>
+
+        {/* CTA proveedores */}
+        <section className="bg-white py-20 text-center">
+          <div className="max-w-2xl mx-auto px-4">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">¿Eres profesional del cuidado de mascotas?</h2>
+            <p className="text-gray-600 mb-8">Únete a nuestro marketplace, define tus tarifas y conecta con miles de dueños de mascotas en tu zona.</p>
+            <Link href="/register?role=provider" className="bg-blue-600 text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-blue-700 transition inline-block">
+              Únete como proveedor
+            </Link>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </>
   );
 }

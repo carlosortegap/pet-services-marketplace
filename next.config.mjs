@@ -1,8 +1,6 @@
-import type { NextConfig } from 'next'
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   typescript: {
-    // Allow deployment with type errors — fix iteratively
     ignoreBuildErrors: true,
   },
   eslint: {
@@ -14,5 +12,6 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],
   },
-}
-export default nextConfig
+};
+
+export default nextConfig;
