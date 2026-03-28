@@ -1,0 +1,386 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  OWNER
+  PROVIDER
+  ADMIN
+}
+
+enum ProviderType {
+  VETERINARIAN
+  PET_WALKER
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum SubscriptionTier {
+  FREE
+  PROFESSIONAL
+  PREMIUM
+}
+
+enum TransactionType {
+  BOOKING_PAYMENT
+  PROVIDER_PAYOUT
+  PLATFORM_FEE
+  REFUND
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_REMINDER
+  BOOKING_CANCELLED
+  REVIEW_REQUEST
+  PAYMENT_RECEIVED
+}
+
+// ============================================================
+// USER
+// ============================================================
+
+model User {
+  id                String           @id @default(cuid())
+  email             String           @unique
+  emailVerified     DateTime?
+  passwordHash      String?
+  name              String
+  avatarUrl         String?
+  phone             String?
+  role              UserRole         @default(OWNER)
+  subscriptionTier  SubscriptionTier @default(FREE)
+  stripeCustomerId  String?          @unique
+  isActive          Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  accounts          Account[]
+  sessions          Session[]
+  ownerProfile      OwnerProfile?
+  providerProfile   ProviderProfile?
+  bookingsAsOwner   Booking[]        @relation("BookingOwner")
+  reviewsGiven      Review[]         @relation("ReviewAuthor")
+  notifications     Notification[]
+  transactions      Transaction[]
+
+  @@index([email])
+}
+
+// ============================================================
+// NEXTAUTH MODELS
+// ============================================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================
+// OWNER PROFILE
+// ============================================================
+
+model OwnerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  bio         String?
+  address     String?
+  city        String?
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pets Pet[]
+}
+
+// ============================================================
+// PET
+// ============================================================
+
+model Pet {
+  id             String       @id @default(cuid())
+  ownerProfileId String
+  name           String
+  species        String
+  breed          String?
+  age            Int?
+  weight         Float?
+  avatarUrl      String?
+  medicalNotes   String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  ownerProfile   OwnerProfile @relation(fields: [ownerProfileId], references: [id], onDelete: Cascade)
+  bookings       Booking[]
+}
+
+// ============================================================
+// PROVIDER PROFILE
+// ============================================================
+
+model ProviderProfile {
+  id               String       @id @default(cuid())
+  userId           String       @unique
+  type             ProviderType
+  displayName      String
+  bio              String?      @db.Text
+  avatarUrl        String?
+  clinicName       String?
+  address          String
+  city             String
+  latitude         Float
+  longitude        Float
+  serviceRadius    Int          @default(10)
+  hourlyRate       Float?
+  isVerified       Boolean      @default(false)
+  isAvailable      Boolean      @default(true)
+  rating           Float        @default(0)
+  reviewCount      Int          @default(0)
+  bookingCount     Int          @default(0)
+  searchVector     Unsupported("tsvector")?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specializations  Specialization[]
+  services         Service[]
+  availability     Availability[]
+  bookings         Booking[]         @relation("BookingProvider")
+  reviewsReceived  Review[]          @relation("ReviewTarget")
+  images           ProviderImage[]
+  subscription     Subscription?
+
+  @@index([latitude, longitude])
+  @@index([rating])
+  @@index([type])
+}
+
+// ============================================================
+// SPECIALIZATION & SERVICE
+// ============================================================
+
+model Specialization {
+  id                String          @id @default(cuid())
+  providerProfileId String
+  name              String
+
+  providerProfile   ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+}
+
+model Service {
+  id                String          @id @default(cuid())
+  providerProfileId String
+  name              String
+  description       String?
+  durationMinutes   Int
+  price             Float
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+
+  providerProfile   ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+  bookings          Booking[]
+}
+
+// ============================================================
+// AVAILABILITY
+// ============================================================
+
+model Availability {
+  id                String          @id @default(cuid())
+  providerProfileId String
+  dayOfWeek         Int
+  startTime         String
+  endTime           String
+  isActive          Boolean         @default(true)
+
+  providerProfile   ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// BOOKING
+// ============================================================
+
+model Booking {
+  id                String        @id @default(cuid())
+  ownerId           String
+  providerProfileId String
+  serviceId         String
+  petId             String
+  status            BookingStatus @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  scheduledAt       DateTime
+  durationMinutes   Int
+  totalAmount       Float
+  platformFee       Float
+  providerPayout    Float
+  stripePaymentId   String?
+  notes             String?       @db.Text
+  cancelledAt       DateTime?
+  cancelReason      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  owner             User            @relation("BookingOwner", fields: [ownerId], references: [id])
+  providerProfile   ProviderProfile @relation("BookingProvider", fields: [providerProfileId], references: [id])
+  service           Service         @relation(fields: [serviceId], references: [id])
+  pet               Pet             @relation(fields: [petId], references: [id])
+  review            Review?
+  transaction       Transaction?
+
+  @@index([ownerId])
+  @@index([providerProfileId])
+  @@index([scheduledAt])
+  @@index([status])
+}
+
+// ============================================================
+// REVIEW
+// ============================================================
+
+model Review {
+  id                String          @id @default(cuid())
+  bookingId         String          @unique
+  authorId          String
+  providerProfileId String
+  rating            Int
+  comment           String?         @db.Text
+  isPublished       Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  booking           Booking         @relation(fields: [bookingId], references: [id])
+  author            User            @relation("ReviewAuthor", fields: [authorId], references: [id])
+  providerProfile   ProviderProfile @relation("ReviewTarget", fields: [providerProfileId], references: [id])
+
+  @@index([providerProfileId])
+  @@index([authorId])
+}
+
+// ============================================================
+// TRANSACTION
+// ============================================================
+
+model Transaction {
+  id          String          @id @default(cuid())
+  bookingId   String          @unique
+  userId      String
+  type        TransactionType
+  amount      Float
+  currency    String          @default("USD")
+  stripeId    String?         @unique
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+
+  booking     Booking         @relation(fields: [bookingId], references: [id])
+  user        User            @relation(fields: [userId], references: [id])
+}
+
+// ============================================================
+// SUBSCRIPTION
+// ============================================================
+
+model Subscription {
+  id                String           @id @default(cuid())
+  providerProfileId String           @unique
+  tier              SubscriptionTier
+  stripeSubId       String?          @unique
+  currentPeriodEnd  DateTime
+  cancelAtPeriodEnd Boolean          @default(false)
+  bookingsThisMonth Int              @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  providerProfile   ProviderProfile  @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// NOTIFICATION
+// ============================================================
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+// ============================================================
+// PROVIDER IMAGE
+// ============================================================
+
+model ProviderImage {
+  id                String          @id @default(cuid())
+  providerProfileId String
+  url               String
+  thumbnailUrl      String?
+  isPrimary         Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+
+  providerProfile   ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+}
